@@ -3,7 +3,17 @@
 #include <string.h>
 #include <ctype.h>
 #include "compiler.h"
-
+//change name of lexeme to array
+// Changed type of line 54
+// need to dynamically allocate lexeme array
+// segment fault probably with arrays
+// added input[index] != '\0' to while loops to prevent segment faults
+// Infinite loop stuck
+// Possible infinite loop on line 77 fix?
+// Now seg fault not related to dynamic memory
+// Where am I accessing something that doesn't exist??
+// Definite errors in logic for final else statement (Symbols)
+// Seg Fault persists try checking logic on code and making more efficient
 #define MAX_IDENT_LENGTH 11
 #define MAX_NUM_LENGTH 5
 #define ERR_IDENT_LENGTH 1
@@ -17,70 +27,72 @@ void print_lexeme_list(lexeme *list, int list_end);
 lexeme *lex_analyze(int list_flag, char *input)
 {
 	int index = 0, lex_index = 0, error = 0;
-	lexeme lexeme[ARRAY_SIZE];
+	lexeme* array = malloc(sizeof(lexeme) * ARRAY_SIZE);
 	while(input[index] != '\0') {
 		char buffer[MAX_IDENT_LENGTH + 1];
 		int buffer_index = 0;
 
 		if(isalnum(input[index])) {
-			while(buffer_index < MAX_IDENT_LENGTH && isalnum(input[index])) {
+			while(buffer_index < MAX_IDENT_LENGTH && input[index] != '\0' && isalnum(input[index])) {
 				buffer[buffer_index] = input[index];
 				index++;
 				buffer_index++;
 			}
-
 			buffer[buffer_index] = '\0';
 			if(isalnum(input[index])) {
-				lexeme[lex_index].error_type = ERR_IDENT_LENGTH;
+				array[lex_index].error_type = ERR_IDENT_LENGTH;
 				error = 1;
-				lexeme[lex_index].type = -1;
-				while(isalnum(input[index])) {
+				array[lex_index].type = -1;
+				while(input[index] != '\0' && isalnum(input[index])) {
 					index++;
 				}
 				continue;
 			}
 			else if(keyword_check(buffer) != -1) {
-				strcpy(lexeme[lex_index].identifier_name, buffer);
-				lexeme[lex_index].type = keyword_check(buffer);
+				strcpy(array[lex_index].identifier_name, buffer);
+				array[lex_index].type = keyword_check(buffer);
 			 }
 			else {
-				lexeme[lex_index].error_type = ERR_INVALID_IDENT_NAME;
+				array[lex_index].error_type = ERR_INVALID_IDENT_NAME;
 				error = 1;
-				lexeme[lex_index].type = -1;
+				array[lex_index].type = -1;
 			}
 		}
 
 		else if(isdigit(input[index])) {
-			while(isdisigit(input[index]) && buffer_index < MAX_NUM_LENGTH) {
+			while(input[index] != '\0' && isdigit(input[index]) && buffer_index < MAX_NUM_LENGTH) {
 				buffer[buffer_index] = input[index];
 				buffer_index++;
 				index++;
 			}
 			buffer[buffer_index] = '\0';
 			if(isdigit(input[index])) {
-				lexeme[lex_index].error_type = ERR_NUM_LENGTH;
-				lexeme[lex_index].type = -1;
+				array[lex_index].error_type = ERR_NUM_LENGTH;
+				array[lex_index].type = -1;
 				error = 1;
-				while(isalnum(input[index])) {
+				while(input[index] != '\0' && isalnum(input[index])) {
 					index++;
 				}
 			}
 			else if(isalpha(input[index])){
-				lexeme[lex_index].error_type = ERR_INVALID_IDENT;
-				lexeme[lex_index].type = -1;
+				array[lex_index].error_type = ERR_INVALID_IDENT;
+				array[lex_index].type = -1;
 				error = 1;
-				while(isalnum(input[index])) {
+				while(input[index] != '\0' && isalnum(input[index])) {
 					index++;
 				}
 			}
 			else {
-				lexeme[lex_index].type = number;
-				lexeme[lex_index].number_value = atoi(buffer);
+				array[lex_index].type = number;
+				array[lex_index].number_value = atoi(buffer);
 			}
 		}
 
 		else if(input[index] == '?') {
-			while(input[++index] != '\n' || input[index] != '\0');
+			index++;
+			while(input[index] != '\0' ||input[index] != '\n' ) {
+				index++;
+			}
 			lex_index--;
 		}
 
@@ -91,82 +103,88 @@ lexeme *lex_analyze(int list_flag, char *input)
 
 		else {
 			char symbol = input[index];
-			if(isalnum(input[index+1]) || isspace(input[index+1]) || input[index+1] == '\n' || input[index+1] == '\0' || input[index+1] == '?') {
+			if(input[index+1] == '\0' || isalnum(input[index+1]) || isspace(input[index+1]) || input[index+1] == '\n' || input[index+1] == '?') {
 				switch(input[index]) {
 				case '.' :
-					lexeme[lex_index].type = period;
+					array[lex_index].type = period;
 					break;
 				case '-' :
-					lexeme[lex_index].type = minus;
+					array[lex_index].type = minus;
 					break;
 				case ';' :
-					lexeme[lex_index].type = semicolon;
+					array[lex_index].type = semicolon;
 					break;
 				case '{' :
-					lexeme[lex_index].type = left_curly_brace;
+					array[lex_index].type = left_curly_brace;
 					break;
 				case '}' :
-					lexeme[lex_index].type = right_curly_brace;
+					array[lex_index].type = right_curly_brace;
 					break;
 				case '<' :
-					lexeme[lex_index].type = less_than;
+					array[lex_index].type = less_than;
 					break;
 				case '>' :
-					lexeme[lex_index].type = greater_than;
+					array[lex_index].type = greater_than;
 					break;
 				case '+' :
-					lexeme[lex_index].type = plus;
+					array[lex_index].type = plus;
 					break;
 				case '*' :
-					lexeme[lex_index].type = times;
+					array[lex_index].type = times;
 					break;
 				case '/' :
-					lexeme[lex_index].type = division;
+					array[lex_index].type = division;
 					break;
 				case '(' :
-					lexeme[lex_index].type = left_parenthesis;
+					array[lex_index].type = left_parenthesis;
 					break;
 				case ')' :
-					lexeme[lex_index].type = right_parenthesis;
+					array[lex_index].type = right_parenthesis;
+					break;
+				default :
+					array[lex_index].error_type = ERR_INVALID_SYMBOL;
+					array[lex_index].type = -1;
+					error = 1;
 					break;
 				}
 				index++;
 			}
-			else {
+			else if(input[index+1] != '\0'){
 				switch (input[index]) {
 				case ':' :
 					if(input[index+1] == '=') {
-						lexeme[lex_index].type = assignment_symbol;
+						array[lex_index].type = assignment_symbol;
 					}
 					else continue;
 					break;
 				case '=' :
 				if(input[index+1] == '=') {
-						lexeme[lex_index].type = equal_to;
+						array[lex_index].type = equal_to;
+						
 					}
 					else continue;
 					break;
 				case '!' :
 				if(input[index+1] == '=') {
-						lexeme[lex_index].type = not_equal_to;
+						array[lex_index].type = not_equal_to;
 					}
 					else continue;
 					break;
 				case '<' :
 				if(input[index+1] == '=') {
-						lexeme[lex_index].type = less_than_or_equal_to;
+						array[lex_index].type = less_than_or_equal_to;
 					}
 					else continue;
 					break;
 				case '>' :
 				if(input[index+1] == '=') {
-						lexeme[lex_index].type = greater_than_or_equal_to;
+						array[lex_index].type = greater_than_or_equal_to;
 					}
 					else continue;
 					break;
 				default :
-					lexeme[lex_index].error_type = ERR_INVALID_SYMBOL;
-					lexeme[lex_index].type = -1;
+					array[lex_index].error_type = ERR_INVALID_SYMBOL;
+					array[lex_index].type = -1;
 					error = 1;
 					break;
 				}
@@ -178,7 +196,7 @@ lexeme *lex_analyze(int list_flag, char *input)
 	if(error == 1) {
 		return NULL;
 	}
-	return lexeme;
+	return array;
 }
 
 int keyword_check(char buffer[])
