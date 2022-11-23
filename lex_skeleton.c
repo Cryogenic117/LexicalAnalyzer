@@ -14,44 +14,43 @@
 
 int keyword_check(char buffer[]);
 void print_lexeme_list(lexeme *list, int list_end);
-
 lexeme *lex_analyze(int list_flag, char *input)
 {
-	int lex_index = 0, index = 0, buffer_index = 0;
-	int error = 0;
+	int index = 0, lex_index = 0, error = 0;
 	lexeme lexeme[ARRAY_SIZE];
-	char buffer[MAX_IDENT_LENGTH + 1];
-
 	while(input[index] != '\0') {
+		char buffer[MAX_IDENT_LENGTH + 1];
+		int buffer_index = 0;
+
 		if(isalnum(input[index])) {
 			while(buffer_index < MAX_IDENT_LENGTH && isalnum(input[index])) {
 				buffer[buffer_index] = input[index];
 				index++;
 				buffer_index++;
 			}
+
 			buffer[buffer_index] = '\0';
 			if(isalnum(input[index])) {
-				// If you stop adding chars to buffer and next char is letter or digit "ERR_IDENT_LENGTH"
 				lexeme[lex_index].error_type = ERR_IDENT_LENGTH;
+				error = 1;
 				lexeme[lex_index].type = -1;
-				lex_index++;
-				// Move past any remaining letters and digits before going to next token
+				while(isalnum(input[index])) {
+					index++;
+				}
+				continue;
 			}
 			else if(keyword_check(buffer) != -1) {
-				// copy buffer to identifier_name field to set token type
 				strcpy(lexeme[lex_index].identifier_name, buffer);
+				lexeme[lex_index].type = keyword_check(buffer);
 			 }
 			else {
-				// "ERR_INVALID_IDENT_NAME"
 				lexeme[lex_index].error_type = ERR_INVALID_IDENT_NAME;
+				error = 1;
 				lexeme[lex_index].type = -1;
-				lex_index++;
 			}
 		}
-		if(isdigit(input[index])) {
-			// Add chars to buffer while they are digits and you have space in buffer up to (MAX_NUM_LENGTH)
-			// reset buffer index in case used above
-			buffer_index = 0;
+
+		else if(isdigit(input[index])) {
 			while(isdisigit(input[index]) && buffer_index < MAX_NUM_LENGTH) {
 				buffer[buffer_index] = input[index];
 				buffer_index++;
@@ -61,36 +60,125 @@ lexeme *lex_analyze(int list_flag, char *input)
 			if(isdigit(input[index])) {
 				lexeme[lex_index].error_type = ERR_NUM_LENGTH;
 				lexeme[lex_index].type = -1;
-				lex_index++;
-				// Move past any remaining digits or letters before moving to next token
+				error = 1;
+				while(isalnum(input[index])) {
+					index++;
+				}
 			}
 			else if(isalpha(input[index])){
 				lexeme[lex_index].error_type = ERR_INVALID_IDENT;
 				lexeme[lex_index].type = -1;
-				lex_index++;
-				// Move past any remaining digits or letters before moving to next token
+				error = 1;
+				while(isalnum(input[index])) {
+					index++;
+				}
 			}
 			else {
+				lexeme[lex_index].type = number;
 				lexeme[lex_index].number_value = atoi(buffer);
-				// number value = buffer
 			}
+		}
 
+		else if(input[index] == '?') {
+			while(input[++index] != '\n' || input[index] != '\0');
+			lex_index--;
 		}
-		if(input[index] == '?') {
-			// Begin with '?' move past all chars until you reach a '\n' or '\0'
-		}
-		if(isspace(input[index])) {
-			// Skip
+
+		else if(isspace(input[index])) {
+			index++;
+			lex_index--;
 		}	
+
 		else {
-			// proccess with if-else-if or switch structure (Don't use string.h for symbols)
-				// Single char symbols
-				//'.', '-', ';', '{', '}', '+', '*', '/', '(', ')'
-				// Double char symbols
-				// ":=", "==", "<", "<=", ">", ">=", "!="
-				// Else  "ERR_INVALID_SYMBOL"
-		}			
+			char symbol = input[index];
+			if(isalnum(input[index+1]) || isspace(input[index+1]) || input[index+1] == '\n' || input[index+1] == '\0' || input[index+1] == '?') {
+				switch(input[index]) {
+				case '.' :
+					lexeme[lex_index].type = period;
+					break;
+				case '-' :
+					lexeme[lex_index].type = minus;
+					break;
+				case ';' :
+					lexeme[lex_index].type = semicolon;
+					break;
+				case '{' :
+					lexeme[lex_index].type = left_curly_brace;
+					break;
+				case '}' :
+					lexeme[lex_index].type = right_curly_brace;
+					break;
+				case '<' :
+					lexeme[lex_index].type = less_than;
+					break;
+				case '>' :
+					lexeme[lex_index].type = greater_than;
+					break;
+				case '+' :
+					lexeme[lex_index].type = plus;
+					break;
+				case '*' :
+					lexeme[lex_index].type = times;
+					break;
+				case '/' :
+					lexeme[lex_index].type = division;
+					break;
+				case '(' :
+					lexeme[lex_index].type = left_parenthesis;
+					break;
+				case ')' :
+					lexeme[lex_index].type = right_parenthesis;
+					break;
+				}
+				index++;
+			}
+			else {
+				switch (input[index]) {
+				case ':' :
+					if(input[index+1] == '=') {
+						lexeme[lex_index].type = assignment_symbol;
+					}
+					else continue;
+					break;
+				case '=' :
+				if(input[index+1] == '=') {
+						lexeme[lex_index].type = equal_to;
+					}
+					else continue;
+					break;
+				case '!' :
+				if(input[index+1] == '=') {
+						lexeme[lex_index].type = not_equal_to;
+					}
+					else continue;
+					break;
+				case '<' :
+				if(input[index+1] == '=') {
+						lexeme[lex_index].type = less_than_or_equal_to;
+					}
+					else continue;
+					break;
+				case '>' :
+				if(input[index+1] == '=') {
+						lexeme[lex_index].type = greater_than_or_equal_to;
+					}
+					else continue;
+					break;
+				default :
+					lexeme[lex_index].error_type = ERR_INVALID_SYMBOL;
+					lexeme[lex_index].type = -1;
+					error = 1;
+					break;
+				}
+				index+=2;
+			}
+		}
+		lex_index++;			
 	}
+	if(error == 1) {
+		return NULL;
+	}
+	return lexeme;
 }
 
 int keyword_check(char buffer[])
