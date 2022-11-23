@@ -3,17 +3,10 @@
 #include <string.h>
 #include <ctype.h>
 #include "compiler.h"
-//change name of lexeme to array
-// Changed type of line 54
-// need to dynamically allocate lexeme array
-// segment fault probably with arrays
-// added input[index] != '\0' to while loops to prevent segment faults
-// Infinite loop stuck
-// Possible infinite loop on line 77 fix?
-// Now seg fault not related to dynamic memory
-// Where am I accessing something that doesn't exist??
-// Definite errors in logic for final else statement (Symbols)
-// Seg Fault persists try checking logic on code and making more efficient
+// Number values are coming out as 1 when they should be 2
+// Something wrong with symbol logic didn't pick up on '{'
+// Lexical Analyzer Error: maximum number length is 5 not showing for 123456
+// Lexical Analyzer Error: identifiers cannot begin with digits not showing for 123a
 #define MAX_IDENT_LENGTH 11
 #define MAX_NUM_LENGTH 5
 #define ERR_IDENT_LENGTH 1
@@ -90,7 +83,7 @@ lexeme *lex_analyze(int list_flag, char *input)
 
 		else if(input[index] == '?') {
 			index++;
-			while(input[index] != '\0' ||input[index] != '\n' ) {
+			while(input[index] != '\0' && input[index] != '\n' ) {
 				index++;
 			}
 			lex_index--;
@@ -194,6 +187,7 @@ lexeme *lex_analyze(int list_flag, char *input)
 		lex_index++;			
 	}
 	if(error == 1) {
+		print_lexeme_list(array, lex_index);
 		return NULL;
 	}
 	return array;
